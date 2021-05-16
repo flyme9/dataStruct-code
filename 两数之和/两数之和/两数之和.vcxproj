@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{1D252D85-285B-4F18-BAAA-329F802BE888}</ProjectGuid>
+    <ProjectGuid>{039888EE-990A-45BF-9529-E58E8C4E0F9B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>序列去重排序</RootNamespace>
+    <RootNamespace>两数之和</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
