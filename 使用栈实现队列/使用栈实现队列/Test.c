@@ -2,113 +2,169 @@
 #include<stdlib.h>
 #include<assert.h>
 #include<stdbool.h>
-/* 构造一个栈：
- * 栈指针、栈的大小、栈的最大容量
- */
 typedef int STDataType;
-typedef struct Stack {
-	STDataType* stk;
-	int stkSize;
-	int stkCapcaity;
-}T_Stack, *PT_Stack;
-
-/* 栈的初始化 */
-PT_Stack stackCreate(int capacity) {
-	PT_Stack ret = (PT_Stack)malloc(sizeof(T_Stack));
-	ret->stk = (STDataType*)malloc(sizeof(STDataType) * capacity);
-	ret->stkSize = 0;
-	ret->stkCapcaity = capacity;
-	return ret;
+typedef struct Stack
+{
+	STDataType* arr;//存储数据
+	int top;//栈顶
+	int capacity;//容量
+}Stack;
+//初始化
+void StackInit(Stack* ps);
+//栈销毁
+void StackDestroy(Stack* ps);
+//入栈
+void StackPush(Stack* ps, STDataType x);
+//出栈
+void StackPop(Stack* ps);
+//获取栈顶元素
+STDataType StackTop(Stack* ps);
+//获取栈中有效元素个数
+int StackSize(Stack* ps);
+//检测栈是否为空
+bool StackEmpty(Stack* ps);
+//初始化
+void StackInit(Stack* ps)
+{	//初始化给定四个字节空间
+	ps->arr = (STDataType*)malloc(sizeof(STDataType) * 4);
+	//判断空间开辟是否成功
+	if (ps->arr == NULL)
+	{
+		perror("malloc fail\n");
+		exit(-1);
+	}
+	ps->top = 0;
+	ps->capacity = 4;
+}//栈销毁
+void StackDestroy(Stack* ps)
+{
+	assert(ps);
+	free(ps->arr);//释放
+	ps->arr = NULL;//置空指针
+	ps->top = ps->capacity = 0;//置0
+}
+//入栈
+void StackPush(Stack* ps, STDataType x)
+{
+	assert(ps);
+	if (ps->top == ps->capacity)
+	{//空间满了要扩容
+		STDataType* tmp = realloc(ps->arr, sizeof(STDataType) * 2 * ps->capacity);
+		//判断内存是否开辟成功
+		if (tmp == NULL)
+		{
+			perror("realloc fail\n");
+			exit(-1);
+		}
+		else
+		{
+			ps->arr = tmp;
+			ps->capacity *= 2;
+		}
+	}
+	ps->arr[ps->top] = x;
+	ps->top++;
+}
+//出栈
+void StackPop(Stack* ps)
+{
+	assert(ps);
+	assert(!StackEmpty(ps));//栈空了，调用报错，终止程序
+	ps->top--;
+}
+//获取栈顶元素
+STDataType StackTop(Stack* ps)
+{
+	assert(ps);
+	assert(!StackEmpty(ps));//栈空了，调用报错，终止程序
+	return ps->arr[ps->top - 1];
+}
+//获取栈中有效元素个数
+int StackSize(Stack* ps)
+{
+	assert(ps);
+	return ps->top;
+}
+//检测栈是否为空
+bool StackEmpty(Stack* ps)
+{
+	assert(ps);
+	return ps->top == 0;//等于0为空，非0表示栈内有数据
 }
 
-/* 入栈操作 */
-void stackPush(PT_Stack obj, int x) {
-	obj->stk[obj->stkSize++] = x;
-}
+typedef struct {
+	Stack pushST;//入队栈
+	Stack popST;//出队栈
 
-/* 出栈操作 */
-void stackPop(PT_Stack obj) {
-	obj->stkSize--;
-}
-
-/* 获得栈顶元素 */
-int satckTop(PT_Stack obj) {
-	return obj->stk[obj->stkSize - 1];
-}
-
-/* 判断栈是否为空 */
-int stackEmpty(PT_Stack obj) {
-	return obj->stkSize == 0;
-}
-
-/* 释放栈的内存空间 */
-void satckFree(PT_Stack obj) {
-	free(obj->stk);
-}
-
-/* 构造队列；使用两个栈 */
-typedef struct MyQueue {
-	PT_Stack inStack;
-	PT_Stack outSatck;
-}MyQueue, *PT_MyQueue;
+} MyQueue;
 
 /** Initialize your data structure here. */
 
-PT_MyQueue myQueueCreate() {
-	PT_MyQueue ret = (PT_MyQueue)malloc(sizeof(MyQueue));
-	ret->inStack = stackCreate(100);
-	ret->outSatck = stackCreate(100);
-	return ret;
-}
-
-/* 入栈向出栈传值 */
-void in2out(MyQueue* obj) {
-	while (!stackEmpty(obj->inStack)) {
-		stackPush(obj->outSatck, satckTop(obj->inStack));
-		stackPop(obj->inStack);
-	}
+MyQueue* myQueueCreate() {
+	//创建初始化队列
+	MyQueue* ps = (MyQueue*)malloc(sizeof(MyQueue));
+	StackInit(&ps->pushST);
+	StackInit(&ps->popST);
+	return ps;
 }
 
 /** Push element x to the back of queue. */
 void myQueuePush(MyQueue* obj, int x) {
-	stackPush(obj->inStack, x);
+	//数据存到入队栈
+	StackPush(&obj->pushST, x);
 }
 
 /** Removes the element from in front of queue and returns that element. */
 int myQueuePop(MyQueue* obj) {
-	if (stackEmpty(obj->outSatck)) {
-		in2out(obj);
+	if (StackEmpty(&obj->popST))
+	{//如果出队栈为空，则将入队栈的数据倒进去
+		while (!StackEmpty(&obj->pushST))
+		{
+			StackPush(&obj->popST, StackTop(&obj->pushST));
+			StackPop(&obj->pushST);
+		}
 	}
-	int x = satckTop(obj->outSatck);
-	stackPop(obj->outSatck);
-	return x;
+	//获取出队栈的栈顶元素
+	int top = StackTop(&obj->popST);
+	StackPop(&obj->popST);
+	return top;
 }
 
 /** Get the front element. */
 int myQueuePeek(MyQueue* obj) {
-	if (stackEmpty(obj->outSatck)) {
-		in2out(obj);
+	if (StackEmpty(&obj->popST))
+	{//如果出队栈为空，则将入队栈的数据倒进去
+		while (!StackEmpty(&obj->pushST))
+		{
+			StackPush(&obj->popST, StackTop(&obj->pushST));
+			StackPop(&obj->pushST);
+		}
 	}
-	return satckTop(obj->outSatck);
+	//返回出队栈的栈顶元素
+	return StackTop(&obj->popST);
 }
 
 /** Returns whether the queue is empty. */
-int myQueueEmpty(MyQueue* obj) {
-	return stackEmpty(obj->inStack) && stackEmpty(obj->outSatck);
+bool myQueueEmpty(MyQueue* obj) {
+	//当两个栈都为空时，返回true，否则false
+	return StackEmpty(&obj->pushST) && StackEmpty(&obj->popST);
+
 }
 
 void myQueueFree(MyQueue* obj) {
-	satckFree(obj->inStack);
-	satckFree(obj->outSatck);
+	StackDestroy(&obj->pushST);
+	StackDestroy(&obj->popST);
+	free(obj);
+
 }
 int main()
 {
-	MyQueue* q1 = (MyQueue*)malloc(sizeof(MyQueue));
-	q1 = myQueueCreate();
-	myQueuePush(q1, 1);
-	myQueuePush(q1, 2);
-	myQueuePeek(q1);
-	myQueuePop(q1);
-	myQueueEmpty(q1);
+	MyQueue* q = myQueueCreate();
+	myQueuePush(q, 1);
+	myQueuePush(q, 2);
+	printf("%d ", myQueuePeek(q));
+	printf("%d ", myQueuePop(q));
+	printf("%d ", myQueuePop(q));
+	printf("%d ",myQueueEmpty(q));
 	return 0;
 }
